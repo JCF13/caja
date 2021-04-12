@@ -10,11 +10,11 @@ from kivy.uix.screenmanager import Screen, ScreenManager, SlideTransition
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
 from sqlalchemy.sql.expression import text
-from db import Content, Department, session, User, create_db
+from db import User, Department, Article, create_db, session
 
 class OptionsScreen(Screen):
-    options = ["add-dpt", "add-cnt", "del-dpt", "del-cnt", "mod-dpt", "mod-cnt"]
-    
+    options = ["fam", "dpt", "art"]
+
 
     def save_dpt(self, name):
         if name != '':
@@ -38,8 +38,8 @@ class OptionsScreen(Screen):
 
     def save_cnt(self, name, price, department_id):
         if len(name) > 0 and float(price) > 0 and len(price) > 0:
-            content = Content(name=name, price=price, department_id=department_id)
-            session.add(content)
+            article = Article(name=name, price=price, department_id=department_id)
+            session.add(article)
             session.commit()
 
             popup = Popup(title="AVISO", content=Label(text="Contenido añadido correctamente"), \
@@ -101,8 +101,8 @@ class OptionsScreen(Screen):
 
     def del_cnt(self, name, dpt_name):
         if name != dpt_name:
-            content = session.query(Content).filter_by(name=name).first()
-            session.delete(content)
+            article = session.query(Article).filter_by(name=name).first()
+            session.delete(article)
             session.commit()
 
             popup = Popup(title="AVISO", content=Label(text="Contenido eliminado correctamente"), \
@@ -128,7 +128,7 @@ class OptionsScreen(Screen):
 
         dropdown = DropDown()
             
-        for i in department.content:
+        for i in department.articles:
             btn = Button(text=i.name, size_hint_y=None, height=44, background_color="pink")
             self.add_on_release_dpt(btn, dropdown, i.name)
             dropdown.add_widget(btn)
@@ -153,14 +153,14 @@ class OptionsScreen(Screen):
 
         layout.add_widget(Label(text="Nombre del contenido"))
         
-        content_name = TextInput(hint_text="Nombre")
-        layout.add_widget(content_name)
+        article_name = TextInput(hint_text="Nombre")
+        layout.add_widget(article_name)
 
-        content_price = TextInput(hint_text="0")
-        layout.add_widget(content_price)
+        article_price = TextInput(hint_text="0")
+        layout.add_widget(article_price)
 
         layout.add_widget(Button(text="AÑADIR CONTENIDO", background_color="green", \
-            on_press=lambda a: self.save_cnt(content_name.text, content_price.text, department_id)))
+            on_press=lambda a: self.save_cnt(article_name.text, article_price.text, department_id)))
         
         return dropdown.select(name)
 
@@ -193,8 +193,8 @@ class OptionsScreen(Screen):
         btn.bind(on_release=lambda a: self.on_release_cnt_mod(dropdown, name, layout, department.id))
 
 
-    def change_opt(self, opt, layout):
-        if opt >= 0:
+    def change_first_opt(self, opt, layout, second_layout):
+        """ if opt >= 0:
             option = self.options[opt]
             
             layout.clear_widgets()
@@ -293,8 +293,66 @@ class OptionsScreen(Screen):
                 pass
         else:
             self.manager.transition = SlideTransition(direction="up")
+            self.manager.current = "Main Screen" """
+        layout.clear_widgets()
+        
+        if opt >= 0:
+            option = self.options[opt]
+            
+            if option == 'fam':
+                layout.add_widget(Button(text="NUEVA", background_color="blue", \
+                    on_press=lambda a: self.change_last_opt('add-fam', second_layout)))
+                layout.add_widget(Button(text="MODIFICAR", background_color="blue", \
+                    on_press=lambda a: self.change_last_opt('mod-fam', second_layout)))
+                layout.add_widget(Button(text="ELIMINAR", background_color="blue", \
+                    on_press=lambda a: self.change_last_opt('del-fam', second_layout)))
+            elif option == 'dpt':
+                layout.add_widget(Button(text="NUEVO", background_color="green", \
+                    on_press=lambda a: self.change_last_opt('add-dpt', second_layout)))
+                layout.add_widget(Button(text="MODIFICAR", background_color="green", \
+                    on_press=lambda a: self.change_last_opt('mod-dpt', second_layout)))
+                layout.add_widget(Button(text="ELIMINAR", background_color="green", \
+                    on_press=lambda a: self.change_last_opt('del-dpt', second_layout)))
+            else:
+                layout.add_widget(Button(text="NUEVO", background_color="pink", \
+                    on_press=lambda a: self.change_last_opt('add-art', second_layout)))
+                layout.add_widget(Button(text="MODIFICAR", background_color="pink", \
+                    on_press=lambda a: self.change_last_opt('mod-art', second_layout)))
+                layout.add_widget(Button(text="ELIMINAR", background_color="pink", \
+                    on_press=lambda a: self.change_last_opt('del-art', second_layout)))
+        else:
+            self.manager.transition = SlideTransition(direction="up")
             self.manager.current = "Main Screen"
+
     
+    def change_last_opt(self, opt, layout):
+        layout.clear_widgets()
+
+        if opt == 'add-fam':
+            layout.add_widget(Label(text="Nombre de la familia:", size_hint=(1, .2)))
+            layout.add_widget(TextInput(hint_text="Bebida", size_hint=(1, .2)))
+            layout.add_widget(Button(text="AÑADIR", size_hint=(1, .2)))
+        elif opt == 'add-dpt':
+            layout.add_widget(Label(text="Nombre del departamento:", size_hint=(1, .2)))
+            layout.add_widget(TextInput(hint_text="Refresco", size_hint=(1, .2)))
+            layout.add_widget(Button(text="AÑADIR", size_hint=(1, .2)))
+        elif opt == 'add-art':
+            layout.add_widget(Label(text="Nombre del artículo:", size_hint=(1, .2)))
+            layout.add_widget(TextInput(hint_text="Coca Cola", size_hint=(1, .2)))
+            layout.add_widget(Button(text="AÑADIR", size_hint=(1, .2)))
+        elif opt == 'mod-fam':
+            layout.add_widget(Button(text="mod-fam"))
+        elif opt == 'mod-dpt':
+            layout.add_widget(Button(text="mod-dpt"))
+        elif opt == 'mod-art':
+            layout.add_widget(Button(text="mod-art"))
+        elif opt == 'del-fam':
+            layout.add_widget(Button(text="del-fam"))
+        elif opt == 'del-dpt':
+            layout.add_widget(Button(text="del-dpt"))
+        else:
+            layout.add_widget(Button(text="del-art"))
+
 
     def create_layout(self):
         main_layout = BoxLayout(orientation="vertical", spacing=10)
@@ -302,27 +360,39 @@ class OptionsScreen(Screen):
         first_layout = BoxLayout(orientation="horizontal", spacing=10, size_hint_x=None)
         first_layout.bind(minimum_width=first_layout.setter('width'))
 
-        last_layout = FloatLayout(size_hint=(1, .9))
-        
-        first_layout.add_widget(Button(text="Añadir departamento", background_color="pink", \
-            on_press=lambda a: self.change_opt(0, last_layout), size_hint_x=None, width=200))
-        first_layout.add_widget(Button(text=" Añadir contenido a\n   un departamento", background_color="pink", \
-            on_press=lambda a: self.change_opt(1, last_layout), size_hint_x=None, width=200))
-        first_layout.add_widget(Button(text="Eliminar departamento", background_color="red", \
-            on_press=lambda a: self.change_opt(2, last_layout), size_hint_x=None, width=200))
-        first_layout.add_widget(Button(text="Eliminar contenido de\n    un departamento", background_color="red", \
-            on_press=lambda a: self.change_opt(3, last_layout), size_hint_x=None, width=200))
-        first_layout.add_widget(Button(text="Modificar departamento", background_color="pink", \
-            on_press=lambda a: self.change_opt(4, last_layout), size_hint_x=None, width=200))
-        first_layout.add_widget(Button(text="Modificar contenido de\n    un departamento", background_color="pink", \
-            on_press=lambda a: self.change_opt(5, last_layout), size_hint_x=None, width=200))
-        first_layout.add_widget(Button(text="Menú principal", background_color="pink", \
-            on_press=lambda a: self.change_opt(-1, last_layout), size_hint_x=None, width=200))
+        mid_layout = BoxLayout(orientation="horizontal", spacing=10, size_hint=(1, .1))
 
-        scroll_options = ScrollView(size_hint=(1, .2))
+        last_layout = GridLayout(cols=2)
+        
+        first_layout.add_widget(Button(text="FAMILIAS", background_color="blue", size_hint_x=None, \
+            width=200, on_press=lambda a: self.change_first_opt(0, mid_layout, last_layout)))
+        first_layout.add_widget(Button(text="DEPARTAMENTOS", background_color="green", size_hint_x=None, \
+            width=200, on_press=lambda a: self.change_first_opt(1, mid_layout, last_layout)))
+        first_layout.add_widget(Button(text="ARTÍCULOS", background_color="pink", size_hint_x=None, \
+            width=200, on_press=lambda a: self.change_first_opt(2, mid_layout, last_layout)))
+        first_layout.add_widget(Button(text="MENÚ PRINCIPAL", background_color="red", size_hint_x=None, \
+            width=200, on_press=lambda a: self.change_first_opt(-1, mid_layout, last_layout)))
+
+        #first_layout.add_widget(Button(text="Añadir departamento", background_color="pink", \
+        #    on_press=lambda a: self.change_opt(0, last_layout), size_hint_x=None, width=200))
+        #first_layout.add_widget(Button(text=" Añadir contenido a\n   un departamento", background_color="pink", \
+        #    on_press=lambda a: self.change_opt(1, last_layout), size_hint_x=None, width=200))
+        #first_layout.add_widget(Button(text="Eliminar departamento", background_color="red", \
+        #    on_press=lambda a: self.change_opt(2, last_layout), size_hint_x=None, width=200))
+        #first_layout.add_widget(Button(text="Eliminar contenido de\n    un departamento", background_color="red", \
+        #    on_press=lambda a: self.change_opt(3, last_layout), size_hint_x=None, width=200))
+        #first_layout.add_widget(Button(text="Modificar departamento", background_color="pink", \
+        #    on_press=lambda a: self.change_opt(4, last_layout), size_hint_x=None, width=200))
+        #first_layout.add_widget(Button(text="Modificar contenido de\n    un departamento", background_color="pink", \
+        #    on_press=lambda a: self.change_opt(5, last_layout), size_hint_x=None, width=200))
+        #first_layout.add_widget(Button(text="Menú principal", background_color="pink", \
+        #    on_press=lambda a: self.change_opt(-1, last_layout), size_hint_x=None, width=200))
+
+        scroll_options = ScrollView(size_hint=(1, .1))
         scroll_options.add_widget(first_layout)
 
         main_layout.add_widget(scroll_options)
+        main_layout.add_widget(mid_layout)
         main_layout.add_widget(last_layout)
         self.add_widget(main_layout)
 
@@ -341,13 +411,13 @@ class MainScreen(Screen):
     def change_dpt(self, department_id, layout, layout_to):
         layout.clear_widgets()
 
-        content = session.query(Content).filter_by(department_id=department_id).all()
+        article = session.query(Article).filter_by(department_id=department_id).all()
 
-        if len(content) > 0:
-            for i in range(len(content)):
-                btn = Button(text=content[i].name, size_hint_y=None, height=40, \
+        if len(article) > 0:
+            for i in range(len(article)):
+                btn = Button(text=article[i].name, size_hint_y=None, height=40, \
                     size_hint_x=None, width=100, background_color="pink")
-                self.add_on_press_content(btn, layout_to, content[i].id)
+                self.add_on_press_article(btn, layout_to, article[i].id)
                 layout.add_widget(btn)
         else:
             layout.add_widget(Label(text="No hay contenido"))
@@ -357,13 +427,13 @@ class MainScreen(Screen):
         btn.bind(on_press=lambda a: self.change_dpt(department_id, layout, layout_to))
 
 
-    def add_on_press_content(self, btn, layout, content_id):
-        btn.bind(on_press=lambda a: self.add_selection(layout, content_id))
+    def add_on_press_article(self, btn, layout, article_id):
+        btn.bind(on_press=lambda a: self.add_selection(layout, article_id))
 
 
-    def add_selection(self, layout, content_id):
-        content = session.query(Content).filter_by(id=content_id).first()
-        self.selection.append(content)
+    def add_selection(self, layout, article_id):
+        article = session.query(Article).filter_by(id=article_id).first()
+        self.selection.append(article)
 
         layout.clear_widgets()
 

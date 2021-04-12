@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, Integer
+from sqlalchemy import create_engine, Column, String, Integer, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.sql.schema import ForeignKey
@@ -8,6 +8,7 @@ Session = sessionmaker(bind=engine)
 session = Session()
 Base = declarative_base()
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -15,44 +16,51 @@ class User(Base):
     username = Column(String)
     password = Column(String)
 
-    def __repr__(self):
-        return "<User(username: %s, password: %s)>" % (self.username, self.password)
-
 
 class Article(Base):
-    __tablename__ = "content"
+    __tablename__ = "articles"
 
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
     description = Column(String(50))
-    price = Column(Integer),
+    price = Column(Float)
 
     department_id = Column(Integer, ForeignKey('departments.id'))
+    iva_type = Column(Integer, ForeignKey('iva.id'))
 
-    department = relationship("Department", back_populates="content")
+    department = relationship("Department", back_populates="articles")
+    iva = relationship("Iva", back_populates="articles")
 
-    def __repr__(self):
-        return "<Article({})>".format(self)
+
+class Iva(Base):
+    __tablename__ = "iva"
+
+    id = Column(Integer, primary_key=True)
+    type = Column(Integer)
+
+    articles = relationship("Article", order_by=Article.id, back_populates="iva")
 
 
 class Department(Base):
     __tablename__ = "departments"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String(20))
 
-    content = relationship("Content", order_by=Article.id, back_populates="department")
+    family_id = Column(Integer, ForeignKey('families.id'))
 
-    def __repr__(self):
-        return "<Department({})>".format(self)
+    family = relationship("Family", back_populates="departments")
+    articles = relationship("Article", order_by=Article.id, back_populates="department")
 
 
-class IVA(Base):
-    __tablename__ = "iva"
+class Family(Base):
+    __tablename__ = "families"
 
     id = Column(Integer, primary_key=True)
-    
+    name = Column(String(20))
+    description = Column(String(50))
 
+    departments = relationship("Department", order_by=Department.id, back_populates="family")
 
 
 def create_db():
@@ -61,5 +69,12 @@ def create_db():
     if session.query(User).filter_by(username="1234").one_or_none() is None:
         user = User(username="1234", password="1234")
         session.add(user)
+
+        session.add_all([
+            Iva(type=21),
+            Iva(type=10),
+            Iva(type=4),
+        ])
+
         session.commit()
 
