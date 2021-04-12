@@ -46,6 +46,7 @@ class Department(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(20))
+    description = Column(String(50))
 
     family_id = Column(Integer, ForeignKey('families.id'))
 
@@ -61,6 +62,9 @@ class Family(Base):
     description = Column(String(50))
 
     departments = relationship("Department", order_by=Department.id, back_populates="family")
+
+    def __repr__(self):
+        return "<Family(name: %s, description: %s)>" % (self.name, self.description)
 
 
 def create_db():

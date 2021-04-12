@@ -10,13 +10,13 @@ from kivy.uix.screenmanager import Screen, ScreenManager, SlideTransition
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
 from sqlalchemy.sql.expression import text
-from db import User, Department, Article, create_db, session
+from db import User, Department, Article, create_db, session, Family
 
 class OptionsScreen(Screen):
     options = ["fam", "dpt", "art"]
 
 
-    def save_dpt(self, name):
+    """def save_dpt(self, name):
         if name != '':
             department = Department(name=name)
             session.add(department)
@@ -191,6 +191,49 @@ class OptionsScreen(Screen):
     def add_on_release_cnt_mod(self, btn, dropdown, name, layout):
         department = session.query(Department).filter_by(name=btn.text).first()
         btn.bind(on_release=lambda a: self.on_release_cnt_mod(dropdown, name, layout, department.id))
+"""
+    def get_dpt_by_fam(self, fam_id):
+        return session.query(Department).filter_by(family_id=fam_id).all()
+
+
+    def get_families(self):
+        return session.query(Family).all()
+
+    
+    def get_art_by_dpt(self, dpt_id):
+        pass
+
+    
+    def save_fam(self, name, description):
+        if name != '':
+            new_family = Family(name=name, description=description)
+            session.add(new_family)
+            session.commit()
+        else:
+            popup = Popup(title="ERROR", content=Label(text="Introduce un nombre válido"), \
+                size_hint=(None, None), size=(400, 200))
+            popup.open()
+        
+
+    def save_dpt(self, name, description, family_name):
+        family = session.query(Family).filter_by(name=family_name).first()
+
+        if name != '':
+            if family_name != 'FAMILIA':
+                new_dpt = Department(name=name, description=description, family_id=family.id)
+                session.add(new_dpt)
+                session.commit()
+            else:
+                popup = Popup(title="ERROR", content=Label(text="Selecciona una familia"), \
+                    size_hint=(None, None), size=(400, 100))
+        else:
+            popup = Popup(title="ERROR", content=Label(text="Introduce un nombre válido"), \
+                size_hint=(None, None), size=(400, 100))
+            popup.open()
+
+    
+    def save_art(self, name, description, price, iva_type, dpt_id):
+        pass
 
 
     def change_first_opt(self, opt, layout, second_layout):
@@ -329,17 +372,59 @@ class OptionsScreen(Screen):
         layout.clear_widgets()
 
         if opt == 'add-fam':
-            layout.add_widget(Label(text="Nombre de la familia:", size_hint=(1, .2)))
-            layout.add_widget(TextInput(hint_text="Bebida", size_hint=(1, .2)))
-            layout.add_widget(Button(text="AÑADIR", size_hint=(1, .2)))
+            layout.add_widget(Label(text="Nombre de la familia:", size_hint=(.8, .1), pos=(-175, 400)))
+            fam_name = TextInput(hint_text="Nombre", size_hint=(.8, .1), pos=(100, 350))
+            layout.add_widget(fam_name)
+            
+            layout.add_widget(Label(text="Descripción:", size_hint=(.8, .1), pos=(-175, 225)))
+            fam_desc = TextInput(hint_text="Descripción de la familia", size_hint=(.8, .2), pos=(100, 125))
+            layout.add_widget(fam_desc)
+            
+            layout.add_widget(Button(text="AÑADIR", size_hint=(.8, .1), pos=(100, 50), background_color="green", \
+                on_press=lambda a: self.save_fam(fam_name.text, fam_desc.text)))
         elif opt == 'add-dpt':
-            layout.add_widget(Label(text="Nombre del departamento:", size_hint=(1, .2)))
-            layout.add_widget(TextInput(hint_text="Refresco", size_hint=(1, .2)))
-            layout.add_widget(Button(text="AÑADIR", size_hint=(1, .2)))
+            layout.add_widget(Label(text="Nombre del departamento:", size_hint=(.8, .1), pos=(-150, 400)))
+            dpt_name = TextInput(hint_text="Nombre", size_hint=(.8, .1), pos=(100, 350))
+            layout.add_widget(dpt_name)
+
+            layout.add_widget(Label(text="Descripción:", size_hint=(.8, .1), pos=(-175, 300)))
+            dpt_desc = TextInput(hint_text="Descripción del departamento", size_hint=(.8, .2), pos=(100, 200))
+            layout.add_widget(dpt_desc)
+
+            layout.add_widget(Label(text="Añadir a la familia:", size_hint=(.8, .1), pos=(-175, 150)))
+            
+            families = self.get_families()
+            dropdown = DropDown()
+            for fam in families:
+                btn = Button(text=fam.name, size_hint_y=None, height=40)
+                btn.bind(on_release=lambda a: dropdown.select(btn.text))
+                dropdown.add_widget(btn)
+
+            families_label = Button(text="FAMILIA", size_hint=(.8, .1), pos=(100, 100))
+            families_label.bind(on_release=dropdown.open)
+            dropdown.bind(on_select=lambda instance, x: setattr(families_label, 'text', x))
+
+            layout.add_widget(families_label)
+
+            layout.add_widget(Button(text="AÑADIR", size_hint=(.8, .1), pos=(100, 50), background_color="green", \
+                on_press=lambda a: self.save_dpt(dpt_name.text, dpt_desc.text, families_label.text)))
         elif opt == 'add-art':
-            layout.add_widget(Label(text="Nombre del artículo:", size_hint=(1, .2)))
-            layout.add_widget(TextInput(hint_text="Coca Cola", size_hint=(1, .2)))
-            layout.add_widget(Button(text="AÑADIR", size_hint=(1, .2)))
+            families = self.get_families()
+            dropdown = DropDown()
+            for fam in families:
+                btn = Button(text=fam.name, size_hint_y=None, height=40)
+                btn.bind(on_release=lambda a: dropdown.select(btn.text))
+                dropdown.add_widget(btn)
+
+            layout.add_widget(Label(text="Seleccionar familia:", size_hint=(.5, .1), pos=(-100, 400)))
+            families_label = Button(text="FAMILIA", size_hint=(.4, .1), pos=(-100, 350))
+            families_label.bind(on_release=dropdown.open)
+            dropdown.bind(on_select=lambda instance, x: setattr(families_label, 'text', x))
+            
+            layout.add_widget(families_label)
+
+            layout.add_widget(Label(text="Seleccionar departamento:", size_hint=(.5, .1), pos=(300, 400)))
+
         elif opt == 'mod-fam':
             layout.add_widget(Button(text="mod-fam"))
         elif opt == 'mod-dpt':
@@ -362,7 +447,7 @@ class OptionsScreen(Screen):
 
         mid_layout = BoxLayout(orientation="horizontal", spacing=10, size_hint=(1, .1))
 
-        last_layout = GridLayout(cols=2)
+        last_layout = FloatLayout()
         
         first_layout.add_widget(Button(text="FAMILIAS", background_color="blue", size_hint_x=None, \
             width=200, on_press=lambda a: self.change_first_opt(0, mid_layout, last_layout)))
