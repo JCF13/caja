@@ -419,8 +419,9 @@ class OptionsScreen(Screen):
 
         mid_layout = BoxLayout(orientation="horizontal", spacing=10, size_hint=(1, .1))
 
-        last_layout = FloatLayout()
-        
+        #last_layout = FloatLayout()
+        last_layout = BoxLayout(orientation="vertical")
+
         first_layout.add_widget(Button(text="FAMILIAS", background_color="blue", size_hint_x=None, \
             width=200, on_press=lambda a: self.change_first_opt(0, mid_layout, last_layout)))
         first_layout.add_widget(Button(text="DEPARTAMENTOS", background_color="green", size_hint_x=None, \
