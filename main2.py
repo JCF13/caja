@@ -1,210 +1,200 @@
-from kivy.uix.floatlayout import FloatLayout
 from kivy.app import App
-from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.textinput import TextInput
-from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.dropdown import DropDown
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import Screen, ScreenManager, SlideTransition
 from kivy.uix.scrollview import ScrollView
-from kivy.uix.popup import Popup
-from sqlalchemy.sql.expression import text
-from db import User, Department, Article, create_db, session, Family
+from kivy.uix.textinput import TextInput
+
+from db import Article, Department, Family, Iva, User, create_db, session
+
 
 class OptionsScreen(Screen):
     options = ["fam", "dpt", "art"]
 
 
-    """def save_dpt(self, name):
-        if name != '':
-            department = Department(name=name)
-            session.add(department)
-            session.commit()
+    def new_article(self, dpt_name, layout, drop):
+        """ Crear layout para nuevo artículo """
 
-            popup_content = BoxLayout(orientation="vertical")
-            popup_content.add_widget(Label(text="Es necesario reiniciar para ver los cambios"))
-            popup_content.add_widget(Button(text="Reiniciar ahora", on_press=\
-                lambda a: self.reload_app()))
+        iva_types = session.query(Iva).all()
+        
+        layout.add_widget(Label(text="Nombre del artículo:", size_hint=(.5, .1), pos=(0, 300)))
 
-            popup = Popup(title="AVISO", content=popup_content, size_hint=(None, None),\
-                size=(400, 200))
-            popup.open()
-        else:
-            popup = Popup(title="ERROR", content=Label(text="Introduce un nombre válido"), \
-                size_hint=(None, None), size=(400, 100))
-            popup.open()
+        name_art = TextInput(hint_text="Nombre", size_hint=(.4, .1), pos=(50, 250))
+        layout.add_widget(name_art)
 
+        layout.add_widget(Label(text="Precio:", size_hint=(.5, .1), pos=(250, 300)))
 
-    def save_cnt(self, name, price, department_id):
-        if len(name) > 0 and float(price) > 0 and len(price) > 0:
-            article = Article(name=name, price=price, department_id=department_id)
-            session.add(article)
-            session.commit()
+        price_art = TextInput(hint_text="Precio", size_hint=(.2, .1), pos=(400, 250))
+        layout.add_widget(price_art)
 
-            popup = Popup(title="AVISO", content=Label(text="Contenido añadido correctamente"), \
-                size_hint=(None, None), size=(400, 200))
-            popup.open()
+        layout.add_widget(Label(text="Descripción:", size_hint=(.5, .1), pos=(0, 200)))
 
-            self.manager.transition = SlideTransition(direction="down")
-            self.manager.current = "Main Screen"
-        else:
-            popup = Popup(title="ERROR", content=Label(text="Introduce datos válidos"), \
-                size_hint=(None, None), size=(400, 100))
-            popup.open()
-
-
-    def mod_dpt(self, name, new_name):
-        if name != '':
-            department = session.query(Department).filter_by(name=name).first()
-            department.name = new_name
-            session.add(department)
-            session.commit()
-
-            popup_content = BoxLayout(orientation="vertical")
-            popup_content.add_widget(Label(text="Es necesario reiniciar para ver los cambios"))
-            popup_content.add_widget(Button(text="Reiniciar ahora", on_press=\
-                lambda a: self.reload_app()))
-
-            popup = Popup(title="AVISO", content=popup_content, size_hint=(None, None),\
-                size=(400, 200))
-            popup.open()
-        else:
-            popup = Popup(title="ERROR", content=Label(text="Introduce un nombre válido"), \
-                size_hint=(None, None), size=(400, 100))
-            popup.open()
-
-
-    def mod_cnt(self, name, new_name, price, new_price, department_id):
-        pass
-
-
-    def del_dpt(self, name):
-        if name != "DEPARTAMENTOS":
-            department = session.query(Department).filter_by(name=name).first()
-            session.delete(department)
-            session.commit()
-
-            popup_content = BoxLayout(orientation="vertical")
-            popup_content.add_widget(Label(text="Es necesario reiniciar para ver los cambios"))
-            popup_content.add_widget(Button(text="Reiniciar ahora", on_press=\
-                lambda a: self.reload_app()))
-
-            popup = Popup(title="AVISO", content=popup_content, size_hint=(None, None),\
-                size=(400, 200))
-            popup.open()
-        else:
-            popup = Popup(title="ERROR", content=Label(text="Selecciona un departamento"), size_hint=(None, None), \
-                size=(400, 100))
-            popup.open()
-
-
-    def del_cnt(self, name, dpt_name):
-        if name != dpt_name:
-            article = session.query(Article).filter_by(name=name).first()
-            session.delete(article)
-            session.commit()
-
-            popup = Popup(title="AVISO", content=Label(text="Contenido eliminado correctamente"), \
-            size_hint=(None, None), size=(400, 200))
-            popup.open()
-
-            self.manager.transition = SlideTransition(direction="down")
-            self.manager.current = "Main Screen"
-        else:
-            popup = Popup(title="ERROR", content=Label(text="Selecciona un contenido"), \
-                size_hint=(None, None), size=(400, 100))
-            popup.open()
-
-
-    def add_on_release_dpt(self, btn, dropdown, name):
-        btn.bind(on_release=lambda btn: dropdown.select(name))
-
-
-    def on_release_cnt_del(self, dropdown, name, layout, dpt):
-        layout.clear_widgets()
-
-        department = session.query(Department).filter_by(name=name).first()
+        desc_art = TextInput(hint_text="Descripción", size_hint=(.5, .2), pos=(50, 100))
+        layout.add_widget(desc_art)
 
         dropdown = DropDown()
-            
-        for i in department.articles:
-            btn = Button(text=i.name, size_hint_y=None, height=44, background_color="pink")
-            self.add_on_release_dpt(btn, dropdown, i.name)
+        for type in iva_types:
+            btn = Button(text=str(type.type)+'%', size_hint_y=None, height=40, background_color="pink")
+            self.add_on_release(btn, dropdown, layout, 'iva')
             dropdown.add_widget(btn)
 
-        select_btn = Button(text='CONTENIDO', size_hint=(.7, .08), pos=(140, 350), \
-            background_color="pink")
-        select_btn.bind(on_release=dropdown.open)
+        layout.add_widget(Label(text="Porcentaje de IVA:", size_hint=(.4, .1), pos=(400, 200)))
+        iva_select = Button(text="IVA", size_hint=(.2, .1), pos=(500, 150), background_color="pink")
+        iva_select.bind(on_release=dropdown.open)
+        dropdown.bind(on_select=lambda instance, x: setattr(iva_select, 'text', x))
+        layout.add_widget(iva_select)
 
-        dropdown.bind(on_select=lambda instance, x: setattr(select_btn, 'text', x))
+        layout.add_widget(Button(text="AÑADIR", size_hint=(.2, .1), pos=(500, 100), \
+            on_press=lambda a: self.save_art(name_art.text, desc_art.text, price_art.text, iva_select.text, dpt_name), \
+                background_color="green"))
+        
+        return drop.select(dpt_name)
+
+
+    def delete_family(self, name, popup):
+        """ Eliminar familia """
+
+        family = session.query(Family).filter_by(name=name).first()
+        session.delete(family)
+        session.commit()
+
+        popup.dismiss()
+
+
+    def popup_delete_family(self, name):
+        """ Crear popup para confirmar eliminación de familia """
+        
+        content_popup = BoxLayout(orientation="vertical")
+        content_popup.add_widget(Label(text="Se eliminará la familia {}".format(name)))
+        content_popup.add_widget(Button(text="Confirmar", on_press=lambda a: self.delete_family(name, popup)))
+        dismiss_btn = Button(text="Cancelar")
+        content_popup.add_widget(dismiss_btn)
+
+        popup = Popup(title="AVISO", content=content_popup, size_hint=(None, None), size=(400, 200))
+        dismiss_btn.bind(on_press=popup.dismiss)
+
+        popup.open()
+
+
+    def popup_delete_department(self, name):
+        """ Crear popup para confirmar eliminación de departamento """        
+        
+        content_popup = BoxLayout(orientation="vertical")
+        content_popup.add_widget(Label(text="Se eliminará el departamento {}".format(name)))
+        content_popup.add_widget(Button(text="Confirmar", on_press=lambda a: self.delete_department(name, popup)))
+        dismiss_btn = Button(text="Cancelar")
+        content_popup.add_widget(dismiss_btn)
+
+        popup = Popup(title="AVISO", content=content_popup, size_hint=(None, None), size=(400, 200))
+        dismiss_btn.bind(on_press=popup.dismiss)
+
+        popup.open()
+
+
+    def delete_department(self, name, popup):
+        """ Eliminar departamento """
+        
+        department = session.query(Department).filter_by(name=name).first()
+        session.delete(department)
+        session.commit()
+
+        popup.dismiss()
+
+
+    def del_fam_layout(self, name, layout, dropdown):
+        if name != 'FAMILIA':
+            layout.add_widget(Button(text="ELIMINAR", background_color="red", size_hint=(.5, .1), pos=(100, 200), \
+                on_press=lambda a: self.popup_delete_family(name)))
+
+        return dropdown.select(name)
+
+
+    def del_dpt_layout(self, name, layout, drop):
+        family = session.query(Family).filter_by(name=name).first()
+        departments = session.query(Department).filter_by(family_id=family.id).all()
+        dropdown = DropDown()
+
+        dpt_count = 0
+        for dpt in departments:
+            if len(dpt.articles) == 0:
+                btn = Button(text=dpt.name, background_color="green", height=40, size_hint_y=None)
+                self.add_on_release(btn, dropdown, layout, 'fam')
+                dropdown.add_widget(btn)
+                dpt_count += 1
+
+        if dpt_count > 0:
+            layout.add_widget(Label(text="Departamentos disponibles:", size_hint=(.4, .1), pos=(100, 300)))
+                
+            dpt_select = Button(text="DEPARTAMENTO", size_hint=(.4, .1), pos=(100, 250), background_color="green")
+            dpt_select.bind(on_release=dropdown.open)
+            dropdown.bind(on_select=lambda instance, x: setattr(dpt_select, 'text', x))
+            layout.add_widget(dpt_select)
+
+            layout.add_widget(Button(text="ELIMINAR", background_color="red", size_hint=(.4, .1), pos=(100, 200), \
+                on_press=lambda a: self.popup_delete_department(dpt_select.text)))
+        else:
+            layout.add_widget(Label(text="Hay departamentos pero contienen artículos", size_hint=(.4, .1), pos=(100, 300)))
+
+        return drop.select(name)
+
+
+    def add_on_release(self, btn, dropdown, layout, option):
+        if option == 'fam':
+            btn.bind(on_release=lambda a: dropdown.select(btn.text))
+        elif option == 'dpt':
+            btn.bind(on_release=lambda a: self.add_dpt_by_fam(btn.text, layout, dropdown, None))
+        elif option == 'fam-art':
+            btn.bind(on_release=lambda a: self.add_dpt_by_fam(btn.text, layout, dropdown, 'dpt-art'))
+        elif option == 'art':
+            btn.bind(on_release=lambda a: self.new_article(btn.text, layout, dropdown))
+        elif option == 'iva':
+            btn.bind(on_release=lambda a: dropdown.select(btn.text))
+        elif option == 'fam-del':
+            btn.bind(on_release=lambda a: self.del_fam_layout(btn.text, layout, dropdown))
+        elif option == 'fam-dpt-del':
+            btn.bind(on_release=lambda a: self.del_dpt_layout(btn.text, layout, dropdown))
+
+    
+    def add_dpt_by_fam(self, fam_name, layout, drop, option):
+        """ Añadir lista de departamentos """
+        
+        family = session.query(Family).filter_by(name=fam_name).first()
+
+        departments = session.query(Department).filter_by(family_id=family.id).all()
+
+        dropdown = DropDown()
+        dpt_count = 0
+        for dpt in departments:
+            btn = Button(text=dpt.name, size_hint_y=None, height=40, background_color="pink")
             
-        layout.add_widget(Label(text="Contenido", size_hint=(.7, .06), pos=(0, 400)))
-        layout.add_widget(select_btn)
-        layout.add_widget(Button(text="ELIMINAR", size_hint=(.7, .06), \
-            on_press=lambda a:self.del_cnt(select_btn.text, dpt), \
-                background_color="red"))
+            if option == 'dpt-art':
+                self.add_on_release(btn, dropdown, layout, 'art')
+            else:
+                self.add_on_release(btn, dropdown, layout, 'fam')
+            dropdown.add_widget(btn)
+            dpt_count += 1
 
-        return dropdown.select(name)
+        if dpt_count > 0:
+            layout.add_widget(Label(text="Seleccionar departamento:", size_hint=(.5, .1), pos=(400, 400)))
+            dpt_label = Button(text="DEPARTAMENTO", size_hint=(.4, .1), pos=(400, 350), background_color="pink")
+            dpt_label.bind(on_release=dropdown.open)
+            dropdown.bind(on_select=lambda instance, x: setattr(dpt_label, 'text', x))
 
+            layout.add_widget(dpt_label)
+        else:
+            layout.add_widget(Label(text="No hay departamentos disponibles", size_hint=(.5, .1), pos=(400, 400)))
 
-    def on_release_cnt_add(self, dropdown, name, layout, department_id):
-        layout.clear_widgets()
-
-        layout.add_widget(Label(text="Nombre del contenido"))
-        
-        article_name = TextInput(hint_text="Nombre")
-        layout.add_widget(article_name)
-
-        article_price = TextInput(hint_text="0")
-        layout.add_widget(article_price)
-
-        layout.add_widget(Button(text="AÑADIR CONTENIDO", background_color="green", \
-            on_press=lambda a: self.save_cnt(article_name.text, article_price.text, department_id)))
-        
-        return dropdown.select(name)
-
-
-    def on_release_cnt_mod(self, dropdown, name, layout, department_id):
-        layout.clear_widgets()
-
-        layout.add_widget(Label(text="Nuevo nombre del departamento"))
-
-        dpt_name = TextInput(hint_text="Nombre")
-        layout.add_widget(dpt_name)
-
-        layout.add_widget(Button(text="GUARDAR CAMBIOS", background_color="green", \
-            on_press=lambda a: self.mod_dpt(name, dpt_name.text)))
-        
-        return dropdown.select(name)
-
-
-    def add_on_release_cnt_del(self, btn, dropdown, name, layout):
-        btn.bind(on_release=lambda a:self.on_release_cnt_del(dropdown, name, layout, btn.text))
-
-
-    def add_on_release_cnt_add(self, btn, dropdown, name, layout):
-        department = session.query(Department).filter_by(name=btn.text).first()
-        btn.bind(on_release=lambda a:self.on_release_cnt_add(dropdown, name, layout, department.id))
-        
-    
-    def add_on_release_cnt_mod(self, btn, dropdown, name, layout):
-        department = session.query(Department).filter_by(name=btn.text).first()
-        btn.bind(on_release=lambda a: self.on_release_cnt_mod(dropdown, name, layout, department.id))
-"""
-    def get_dpt_by_fam(self, fam_id):
-        return session.query(Department).filter_by(family_id=fam_id).all()
-
-
-    def get_families(self):
-        return session.query(Family).all()
-
-    
-    def get_art_by_dpt(self, dpt_id):
-        pass
+        return drop.select(fam_name)
 
     
     def save_fam(self, name, description):
+        """ Guardar nueva familia """
+
         if name != '':
             new_family = Family(name=name, description=description)
             session.add(new_family)
@@ -216,6 +206,8 @@ class OptionsScreen(Screen):
         
 
     def save_dpt(self, name, description, family_name):
+        """ Guardar nuevo departamento """
+        
         family = session.query(Family).filter_by(name=family_name).first()
 
         if name != '':
@@ -232,111 +224,49 @@ class OptionsScreen(Screen):
             popup.open()
 
     
-    def save_art(self, name, description, price, iva_type, dpt_id):
-        pass
+    def save_art(self, name, description, price, iva_type, dpt_name):
+        """ Guardar nuevo artículo """
+        
+        if name != '':
+            try:
+                price = float(price)
+                
+                if price != '' and float(price) > 0:
+                    if iva_type != 'IVA':
+                        if dpt_name != 'DEPARTAMENTO':
+                            iva_type = iva_type.replace('%', '')
+                            iva = session.query(Iva).filter_by(type=iva_type).first()
+                            department = session.query(Department).filter_by(name=dpt_name).first()
 
+                            new_article = Article(name=name, description=description, price=price, \
+                                department_id=department.id, iva_type=iva.type)
+                            session.add(new_article)
+                            session.commit()
+                        else:
+                            popup = Popup(title="ERROR", content=Label(text="Selecciona un departamento"), \
+                                size_hint=(None, None), size=(400, 100))
+                            popup.open()
+                    else:
+                        popup = Popup(title="ERROR", content=Label(text="Selecciona un porcentaje de IVA"), \
+                            size_hint=(None, None), size=(400, 100))
+                        popup.open()
+                else:
+                    popup = Popup(title="ERROR", content=Label(text="Introduce un precio válido"), \
+                        size_hint=(None, None), size=(400, 100))
+                    popup.open()
+            except:
+                popup = Popup(title="ERROR", content=Label(text="Introduce un precio válido"), \
+                    size_hint=(None, None), size=(400, 100))
+                popup.open()  
+        else:
+            popup = Popup(title="ERROR", content=Label(text="Introduce un nombre válido"), \
+                size_hint=(None, None), size=(400, 100))
+            popup.open()
+        
 
     def change_first_opt(self, opt, layout, second_layout):
-        """ if opt >= 0:
-            option = self.options[opt]
-            
-            layout.clear_widgets()
-            if option == "add-dpt":
-                dpt_label = Label(text="Departamento", size_hint=(1, .06), pos=(-250, 400))
-                dpt_name = TextInput(hint_text="Nuevo departamento", size_hint=(.7, .06), pos=(100, 350))
-                save_btn = Button(text="GUARDAR DEPARTAMENTO", on_press=lambda a: self.save_dpt(dpt_name.text), \
-                    size_hint=(.3, .07), pos=(420, 300), background_color="green")
+        """ Seleccionar opción con la que operar """
 
-                layout.add_widget(dpt_label)
-                layout.add_widget(dpt_name)
-                layout.add_widget(save_btn)
-            elif option == "add-cnt":
-                content_layout = BoxLayout(orientation="vertical", size_hint=(None, None), \
-                    size=(560,200), pos=(140,100))
-
-                departments = session.query(Department).all()
-                dropdown = DropDown()
-                
-                for i in departments:
-                    btn = Button(text=i.name, size_hint_y=None, height=44, background_color="pink")
-                    self.add_on_release_cnt_add(btn, dropdown, i.name, content_layout)
-                    dropdown.add_widget(btn)
-
-                select_btn = Button(text='DEPARTAMENTOS', size_hint=(.7, .08), pos=(140, 350), \
-                    background_color="pink")
-                select_btn.bind(on_release=dropdown.open)
-
-                dropdown.bind(on_select=lambda instance, x: setattr(select_btn, 'text', x))
-                
-                layout.add_widget(Label(text="Departamentos disponibles", size_hint=(.7, .06), pos=(0, 400)))
-                layout.add_widget(select_btn)
-                layout.add_widget(content_layout)
-            elif option == "del-dpt":
-                departments = session.query(Department).all()
-                dropdown = DropDown()
-                
-                for i in departments:
-                    btn = Button(text=i.name, size_hint_y=None, height=44, background_color="pink")
-                    self.add_on_release_dpt(btn, dropdown, i.name)
-                    dropdown.add_widget(btn)
-
-                select_btn = Button(text='DEPARTAMENTOS', size_hint=(.7, .08), pos=(140, 350), \
-                    background_color="pink")
-                select_btn.bind(on_release=dropdown.open)
-
-                dropdown.bind(on_select=lambda instance, x: setattr(select_btn, 'text', x))
-                
-                layout.add_widget(Label(text="Departamentos disponibles", size_hint=(.7, .06), pos=(0, 400)))
-                layout.add_widget(Button(text="ELIMINAR", background_color="red", size_hint=(.2, .08), pos=(140, 300), \
-                    on_press=lambda a: self.del_dpt(select_btn.text)))
-                layout.add_widget(select_btn)
-            elif option == 'del-cnt':
-                content_layout = BoxLayout(orientation="vertical", size_hint=(None, None), \
-                    size=(560,200), pos=(140,100))
-
-                departments = session.query(Department).all()
-                dropdown = DropDown()
-                
-                for i in departments:
-                    btn = Button(text=i.name, size_hint_y=None, height=44, background_color="pink")
-                    self.add_on_release_cnt_del(btn, dropdown, i.name, content_layout)
-                    dropdown.add_widget(btn)
-
-                select_btn = Button(text='DEPARTAMENTOS', size_hint=(.7, .08), pos=(140, 350), \
-                    background_color="pink")
-                select_btn.bind(on_release=dropdown.open)
-
-                dropdown.bind(on_select=lambda instance, x: setattr(select_btn, 'text', x))
-                
-                layout.add_widget(Label(text="Departamentos disponibles", size_hint=(.7, .06), pos=(0, 400)))
-                layout.add_widget(select_btn)
-                layout.add_widget(content_layout)
-            elif option == 'mod-dpt':
-                content_layout = BoxLayout(orientation="vertical", size_hint=(None, None), \
-                    size=(560, 200), pos=(140, 100))
-
-                departments = session.query(Department).all()
-                dropdown = DropDown()
-
-                for i in departments:
-                    btn = Button(text=i.name, size_hint_y=None, height=44, background_color="pink")
-                    self.add_on_release_cnt_mod(btn, dropdown, i.name, content_layout)
-                    dropdown.add_widget(btn)
-
-                select_btn = Button(text='DEPARTAMENTOS', size_hint=(.7, .08), pos=(140, 350), \
-                    background_color="pink")
-                select_btn.bind(on_release=dropdown.open)
-
-                dropdown.bind(on_select=lambda instance, x: setattr(select_btn, 'text', x))
-
-                layout.add_widget(Label(text='Departamentos disponibles', size_hint=(.7, .06), pos=(0, 400)))
-                layout.add_widget(select_btn)
-                layout.add_widget(content_layout)
-            else:
-                pass
-        else:
-            self.manager.transition = SlideTransition(direction="up")
-            self.manager.current = "Main Screen" """
         layout.clear_widgets()
         
         if opt >= 0:
@@ -393,14 +323,15 @@ class OptionsScreen(Screen):
 
             layout.add_widget(Label(text="Añadir a la familia:", size_hint=(.8, .1), pos=(-175, 150)))
             
-            families = self.get_families()
+            families = session.query(Family).all()
             dropdown = DropDown()
+            
             for fam in families:
-                btn = Button(text=fam.name, size_hint_y=None, height=40)
-                btn.bind(on_release=lambda a: dropdown.select(btn.text))
+                btn = Button(text=fam.name, size_hint_y=None, height=40, background_color="green")
+                self.add_on_release(btn, dropdown, layout, 'fam')
                 dropdown.add_widget(btn)
 
-            families_label = Button(text="FAMILIA", size_hint=(.8, .1), pos=(100, 100))
+            families_label = Button(text="FAMILIA", size_hint=(.8, .1), pos=(100, 100), background_color="green")
             families_label.bind(on_release=dropdown.open)
             dropdown.bind(on_select=lambda instance, x: setattr(families_label, 'text', x))
 
@@ -409,22 +340,20 @@ class OptionsScreen(Screen):
             layout.add_widget(Button(text="AÑADIR", size_hint=(.8, .1), pos=(100, 50), background_color="green", \
                 on_press=lambda a: self.save_dpt(dpt_name.text, dpt_desc.text, families_label.text)))
         elif opt == 'add-art':
-            families = self.get_families()
+            families = session.query(Family).all()
+            
             dropdown = DropDown()
             for fam in families:
-                btn = Button(text=fam.name, size_hint_y=None, height=40)
-                btn.bind(on_release=lambda a: dropdown.select(btn.text))
+                btn = Button(text=fam.name, size_hint_y=None, height=40, background_color="pink")
+                self.add_on_release(btn, dropdown, layout, 'fam-art')
                 dropdown.add_widget(btn)
 
-            layout.add_widget(Label(text="Seleccionar familia:", size_hint=(.5, .1), pos=(-100, 400)))
-            families_label = Button(text="FAMILIA", size_hint=(.4, .1), pos=(-100, 350))
+            layout.add_widget(Label(text="Seleccionar familia:", size_hint=(.5, .1), pos=(0, 400)))
+            families_label = Button(text="FAMILIA", size_hint=(.4, .1), pos=(50, 350), background_color="pink")
             families_label.bind(on_release=dropdown.open)
             dropdown.bind(on_select=lambda instance, x: setattr(families_label, 'text', x))
             
             layout.add_widget(families_label)
-
-            layout.add_widget(Label(text="Seleccionar departamento:", size_hint=(.5, .1), pos=(300, 400)))
-
         elif opt == 'mod-fam':
             layout.add_widget(Button(text="mod-fam"))
         elif opt == 'mod-dpt':
@@ -432,9 +361,52 @@ class OptionsScreen(Screen):
         elif opt == 'mod-art':
             layout.add_widget(Button(text="mod-art"))
         elif opt == 'del-fam':
-            layout.add_widget(Button(text="del-fam"))
+            families = session.query(Family).all()
+
+            layout.add_widget(Label(text="Una familia no puede ser eliminada si contiene departamentos", \
+                size_hint=(.5, .1), pos=(100, 450)))
+
+            if len(families) > 0:
+                
+                dropdown = DropDown()
+                fam_count = 0
+                for fam in families:
+                    if len(fam.departments) == 0:
+                        btn = Button(text=fam.name, size_hint_y=None, height=40, background_color="blue")
+                        self.add_on_release(btn, dropdown, layout, 'fam-del')
+                        dropdown.add_widget(btn)
+                        fam_count += 1
+
+                if fam_count > 0:
+                    layout.add_widget(Label(text="Familias disponibles:", size_hint=(.5, .1), pos=(100, 400)))
+                    fam_select = Button(text="FAMILIA", size_hint=(.5, .1), pos=(100, 350), background_color="blue")
+                    fam_select.bind(on_release=dropdown.open)
+                    dropdown.bind(on_select=lambda instance, x: setattr(fam_select, 'text', x))
+                
+                    layout.add_widget(fam_select)
+                else:
+                    layout.add_widget(Label(text="Hay familias pero contienen departamentos", size_hint=(.5, .1), pos=(100, 400)))
+            else:
+                layout.add_widget(Label(text="No hay familias", size_hint=(.5, .1), pos=(100, 400)))
         elif opt == 'del-dpt':
-            layout.add_widget(Button(text="del-dpt"))
+            families = session.query(Family).all()
+            
+            layout.add_widget(Label(text="Un departamento no puede ser eliminado si contiene artículos", \
+                size_hint=(.5, .1), pos=(50, 450)))
+
+            dropdown = DropDown()
+            for fam in families:
+                if len(fam.departments) > 0:
+                    btn = Button(text=fam.name, size_hint_y=None, height=40, background_color="green")
+                    self.add_on_release(btn, dropdown, layout, 'fam-dpt-del')
+                    dropdown.add_widget(btn)
+
+            layout.add_widget(Label(text="Familias disponibles:", size_hint=(.5, .1), pos=(0, 400)))
+            fam_select = Button(text="FAMILIA", size_hint=(.5, .1), pos=(50, 350), background_color="green")
+            fam_select.bind(on_release=dropdown.open)
+            dropdown.bind(on_select=lambda instance, x: setattr(fam_select, 'text', x))
+            
+            layout.add_widget(fam_select)
         else:
             layout.add_widget(Button(text="del-art"))
 
@@ -457,21 +429,6 @@ class OptionsScreen(Screen):
             width=200, on_press=lambda a: self.change_first_opt(2, mid_layout, last_layout)))
         first_layout.add_widget(Button(text="MENÚ PRINCIPAL", background_color="red", size_hint_x=None, \
             width=200, on_press=lambda a: self.change_first_opt(-1, mid_layout, last_layout)))
-
-        #first_layout.add_widget(Button(text="Añadir departamento", background_color="pink", \
-        #    on_press=lambda a: self.change_opt(0, last_layout), size_hint_x=None, width=200))
-        #first_layout.add_widget(Button(text=" Añadir contenido a\n   un departamento", background_color="pink", \
-        #    on_press=lambda a: self.change_opt(1, last_layout), size_hint_x=None, width=200))
-        #first_layout.add_widget(Button(text="Eliminar departamento", background_color="red", \
-        #    on_press=lambda a: self.change_opt(2, last_layout), size_hint_x=None, width=200))
-        #first_layout.add_widget(Button(text="Eliminar contenido de\n    un departamento", background_color="red", \
-        #    on_press=lambda a: self.change_opt(3, last_layout), size_hint_x=None, width=200))
-        #first_layout.add_widget(Button(text="Modificar departamento", background_color="pink", \
-        #    on_press=lambda a: self.change_opt(4, last_layout), size_hint_x=None, width=200))
-        #first_layout.add_widget(Button(text="Modificar contenido de\n    un departamento", background_color="pink", \
-        #    on_press=lambda a: self.change_opt(5, last_layout), size_hint_x=None, width=200))
-        #first_layout.add_widget(Button(text="Menú principal", background_color="pink", \
-        #    on_press=lambda a: self.change_opt(-1, last_layout), size_hint_x=None, width=200))
 
         scroll_options = ScrollView(size_hint=(1, .1))
         scroll_options.add_widget(first_layout)

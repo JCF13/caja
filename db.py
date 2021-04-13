@@ -26,9 +26,9 @@ class Article(Base):
     price = Column(Float)
 
     department_id = Column(Integer, ForeignKey('departments.id'))
-    iva_type = Column(Integer, ForeignKey('iva.id'))
-
     department = relationship("Department", back_populates="articles")
+
+    iva_type = Column(Integer, ForeignKey('iva.id'))
     iva = relationship("Iva", back_populates="articles")
 
 
@@ -49,9 +49,12 @@ class Department(Base):
     description = Column(String(50))
 
     family_id = Column(Integer, ForeignKey('families.id'))
-
     family = relationship("Family", back_populates="departments")
+
     articles = relationship("Article", order_by=Article.id, back_populates="department")
+
+    def __repr__(self):
+        return "<Department({})>".format(self)
 
 
 class Family(Base):
