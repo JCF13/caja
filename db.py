@@ -16,6 +16,9 @@ class User(Base):
     username = Column(String)
     password = Column(String)
 
+    def __repr__(self):
+        return "<User({})>".format(self)
+
 
 class Article(Base):
     __tablename__ = "articles"
@@ -30,6 +33,9 @@ class Article(Base):
 
     iva_type = Column(Integer, ForeignKey('iva.id'))
     iva = relationship("Iva", back_populates="articles")
+
+    def __repr__(self):
+        return "<Article({})>".format(self)
 
 
 class Iva(Base):
@@ -67,8 +73,8 @@ class Family(Base):
     departments = relationship("Department", order_by=Department.id, back_populates="family")
 
     def __repr__(self):
-        return "<Family(name: %s, description: %s)>" % (self.name, self.description)
-
+        return "<Family({})>".format(self)
+        
 
 def create_db():
     Base.metadata.create_all(engine)
