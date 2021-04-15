@@ -73,7 +73,7 @@ class Family(Base):
     departments = relationship("Department", order_by=Department.id, back_populates="family")
 
     def __repr__(self):
-        return "<Family({})>".format(self)
+        return "<Family(name: %s)>" % self.name
         
 
 def create_db():
@@ -90,4 +90,3 @@ def create_db():
         ])
 
         session.commit()
-
