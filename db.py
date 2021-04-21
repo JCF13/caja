@@ -17,13 +17,15 @@ class User(Base):
     password = Column(String)
 
     def __repr__(self):
-        return "<User({})>".format(self)
+        return "<User(id: %d, username: %s, password: %s)>" \
+            % (self.id, self.username, self.password)
 
 
 class Article(Base):
     __tablename__ = "articles"
 
     id = Column(Integer, primary_key=True)
+    code = Column(String(4), unique=True)
     name = Column(String(20))
     description = Column(String(50))
     price = Column(Float)
@@ -35,7 +37,29 @@ class Article(Base):
     iva = relationship("Iva", back_populates="articles")
 
     def __repr__(self):
-        return "<Article({})>".format(self)
+        return "<Article(id: %d, name: %s, description: %s, department_id: %d, iva_type: %d)>" \
+            % (self.id, self.name, self.description, self.department_id, self.iva_type)
+
+
+class Department(Base):
+    __tablename__ = "departments"
+
+    id = Column(Integer, primary_key=True)
+    code = Column(String(4), unique=True)
+    name = Column(String(20))
+    description = Column(String(50))
+
+    family_id = Column(Integer, ForeignKey('families.id'))
+    family = relationship("Family", back_populates="departments")
+
+    iva_type = Column(Integer, ForeignKey('iva.id'))
+    iva = relationship("Iva", back_populates="departments")
+
+    articles = relationship("Article", order_by=Article.id, back_populates="department")
+
+    def __repr__(self):
+        return "<Department(id: %d, name: %s, description: %s, family_id: %d, iva_type: %d)>" \
+            % (self.id, self.name, self.description, self.family_id, self.iva_type)
 
 
 class Iva(Base):
@@ -45,35 +69,25 @@ class Iva(Base):
     type = Column(Integer)
 
     articles = relationship("Article", order_by=Article.id, back_populates="iva")
-
-
-class Department(Base):
-    __tablename__ = "departments"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(20))
-    description = Column(String(50))
-
-    family_id = Column(Integer, ForeignKey('families.id'))
-    family = relationship("Family", back_populates="departments")
-
-    articles = relationship("Article", order_by=Article.id, back_populates="department")
+    departments = relationship("Department", order_by=Department.id, back_populates="iva")
 
     def __repr__(self):
-        return "<Department({})>".format(self)
+        return "<Iva(id: %d, type: %d)>" % (self.id, self.type)
 
 
 class Family(Base):
     __tablename__ = "families"
 
     id = Column(Integer, primary_key=True)
+    code = Column(String(4), unique=True)
     name = Column(String(20))
     description = Column(String(50))
 
     departments = relationship("Department", order_by=Department.id, back_populates="family")
 
     def __repr__(self):
-        return "<Family(name: %s)>" % self.name
+        return "<Family(id: %d, code: %s name: %s, description: %s)>" \
+            % (self.id, self.code, self.name, self.description)
         
 
 def create_db():
@@ -87,6 +101,8 @@ def create_db():
             Iva(type=21),
             Iva(type=10),
             Iva(type=4),
+            Iva(type=0),
+            Iva(type=-1)
         ])
 
         session.commit()
