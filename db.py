@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, String, Integer, Float
+from sqlalchemy import Column, Float, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.sql.schema import ForeignKey
@@ -25,6 +25,7 @@ class Article(Base):
     __tablename__ = "articles"
 
     id = Column(Integer, primary_key=True)
+    code = Column(String(4), unique=True)
     name = Column(String(20))
     description = Column(String(50))
     price = Column(Float)
